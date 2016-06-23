@@ -1,0 +1,120 @@
+'全局变量定义
+Dim bk_rowPos As Integer '指示工作簿名将要赋值给哪一行，而且工作簿中的工作表名也是根据这个变量来决定赋值给哪一行的。
+
+'获取在【开始】和【结束】之间的所有Sheet名
+Sub getSheetsName(WkBk As String)
+
+Dim i, start_index, end_index, NumRow, rowBkName As Integer
+Dim BkPath As String
+
+NumRow = 1
+start_index = 0
+end_index = 0
+
+BkPath = Strings.Left(WkBk, Strings.InStrRev(WkBk, "\"))
+Set wk_bk = Workbooks.Open(WkBk)
+
+For i = 1 To wk_bk.Sheets.Count
+
+    If wk_bk.Sheets(i).Name = "Start" Then
+    
+        start_index = i
+        
+    End If
+    
+    If wk_bk.Sheets(i).Name = "End" Then
+    
+        end_index = i
+        
+    End If
+    
+Next i
+
+If end_index - start_index > 1 Then 'start_index, end_index之间有至少一个以上的工作表
+    rowBkName = bk_rowPos
+    For i = start_index + 1 To end_index - 1
+        ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 3) = wk_bk.Sheets(i).Name
+        ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 4) = "='" & BkPath & "[" & ThisWorkbook.Sheets("Sheet1").Cells(rowBkName, 2).Value & "]" & _
+                                                                                                    ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 3).Value & "'!" & "B1"
+        ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 5) = "='" & BkPath & "[" & ThisWorkbook.Sheets("Sheet1").Cells(rowBkName, 2).Value & "]" & _
+                                                                                                    ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 3).Value & "'!" & "B2"
+        ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 6) = "='" & BkPath & "[" & ThisWorkbook.Sheets("Sheet1").Cells(rowBkName, 2).Value & "]" & _
+                                                                                                    ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 3).Value & "'!" & "B3"
+        ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 7) = "='" & BkPath & "[" & ThisWorkbook.Sheets("Sheet1").Cells(rowBkName, 2).Value & "]" & _
+                                                                                                    ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 3).Value & "'!" & "B4"
+        ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 8) = "='" & BkPath & "[" & ThisWorkbook.Sheets("Sheet1").Cells(rowBkName, 2).Value & "]" & _
+                                                                                                    ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 3).Value & "'!" & "B5"
+        ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 9) = "='" & BkPath & "[" & ThisWorkbook.Sheets("Sheet1").Cells(rowBkName, 2).Value & "]" & _
+                                                                                                    ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 3).Value & "'!" & "B6"
+        bk_rowPos = bk_rowPos + 1
+    Next i
+    
+    bk_rowPos = bk_rowPos - 1
+
+End If
+
+wk_bk.Close '关闭工作簿
+
+End Sub
+
+Sub listAllExcelFile_Sheets()
+Dim f As String
+Dim file() As String
+Dim x, i, k As Integer
+i = 1
+k = 1
+x = 1
+bk_rowPos = 3 '全局变量  '指示工作簿名将要赋值给哪一行，而且工作簿中的工作表名也是根据这个变量来决定赋值给哪一行的。
+
+'清空工作表内容
+ThisWorkbook.Sheets("Sheet1").Range("A1:ZZ65535") = ""
+ 
+ '表头做成 WorkBook    Sheet   Total   Execute OK  NG  Todo    Suspend
+ ThisWorkbook.Sheets("Sheet1").Cells(2, 2) = "WorkBook"
+ ThisWorkbook.Sheets("Sheet1").Cells(2, 3) = "Sheet"
+ ThisWorkbook.Sheets("Sheet1").Cells(2, 4) = "Total"
+ ThisWorkbook.Sheets("Sheet1").Cells(2, 5) = "Execute"
+ ThisWorkbook.Sheets("Sheet1").Cells(2, 6) = "OK"
+ ThisWorkbook.Sheets("Sheet1").Cells(2, 7) = "NG"
+ ThisWorkbook.Sheets("Sheet1").Cells(2, 8) = "ToDo"
+ ThisWorkbook.Sheets("Sheet1").Cells(2, 9) = "Suspend"
+ 
+ 
+ReDim file(1 To i)
+file(1) = ThisWorkbook.Path & "\"
+
+'-- 获得所有子目录
+Do Until i > k
+    f = Dir(file(i), vbDirectory)
+        Do Until f = ""
+            If InStr(f, ".") = 0 Then
+                k = k + 1
+                ReDim Preserve file(1 To k)
+                file(k) = file(i) & f & "\"
+            End If
+            f = Dir
+        Loop
+    i = i + 1
+Loop
+
+'-- 获得所有子目录下的所有文件
+For i = 1 To k
+    f = Dir(file(i) & "*.xls")     '通配符*.*表示所有文件，*.xlsx Excel文件
+    Do Until f = ""
+         If f <> "RootResult.xlsm" Then '当前文件除外
+            ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 2) = f
+            
+            '设置超链接
+            ThisWorkbook.Sheets("Sheet1").Hyperlinks.Add _
+            Anchor:=ThisWorkbook.Sheets("Sheet1").Cells(bk_rowPos, 2), _
+            Address:=file(i) & f
+            
+            getSheetsName (file(i) & f)
+            bk_rowPos = bk_rowPos + 1
+       End If
+       
+        f = Dir
+    Loop
+Next i
+
+End Sub
